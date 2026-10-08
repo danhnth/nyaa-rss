@@ -1,6 +1,6 @@
-# nyaa-rss — Music Home Server reproduce kit (Termux + Transmission + Navidrome)
+# nyaa-rss: Music Home Server reproduce kit (Termux + Transmission + Navidrome)
 
-This repo rebuilds the whole music streaming box after a **phone swap / factory reset**.
+This repo rebuilds the music streaming box after a phone swap or factory reset.
 The RSS feed is pre-fetched by the companion repo `danhnth/nyaa-rss-proxy` (GitHub Actions every 12h → `feed.json`).
 Termux only pulls that static file and never touches `nyaa.si` directly (blocked by VN ISP at L3 + Nyaa blocks datacenter IPs).
 
@@ -11,11 +11,11 @@ Termux only pulls that static file and never touches `nyaa.si` directly (blocked
 ```
 
 - `nyaa-rss-proxy`: stdlib-only `fetch_nyaa.py`, cron `0 */12 * * *`, writes `feed.json` with 75 items including `infoHash/size/seeders` (75 is Nyaa's per-feed RSS limit).
-- This repo: Termux client + restore docs. No duplicated fetch logic.
+- This repo holds the Termux client and restore docs, without duplicating the fetch logic.
 
 ## Quick restore (new phone)
 
-Run line by line (Termux paste is fragile with multi-line: a trailing `\` swallows the next command, and `~` inside quotes does not expand):
+Run line by line. Termux paste breaks on multi-line input: a trailing `\` swallows the next command, and `~` inside quotes does not expand:
 
 ```bash
 pkg update -y
@@ -63,7 +63,7 @@ crontab -e
 
 ## Configuration
 
-Environment variables (sane defaults, works out of the box):
+Environment variables (defaults work as is):
 
 | Var | Default | Meaning |
 |---|---|---|
@@ -78,7 +78,7 @@ Two independent guards against huge packs: size cap + start-paused. Resume manua
 
 ## Transmission remote access
 
-SSH tunnel, no config change needed:
+Use an SSH tunnel, no config change needed:
 
 ```bash
 ssh -L 9091:127.0.0.1:9091 <user>@<PHONE_IP> -p <SSH_PORT>
