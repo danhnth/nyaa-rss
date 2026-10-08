@@ -1,21 +1,21 @@
-# nyaa-rss — Bộ reproduce Music Home Server (Termux + Transmission + Navidrome)
+# nyaa-rss — Music Home Server reproduce kit (Termux + Transmission + Navidrome)
 
-Repo này giúp dựng lại toàn bộ máy stream nhạc sau khi **đổi điện thoại / reset máy**.
-Feed RSS được lấy sẵn từ repo phụ: `danhnth/nyaa-rss-proxy` (GitHub Actions 12h/lần → `feed.json`).
-Termux chỉ kéo file tĩnh, không bao giờ chạm trực tiếp `nyaa.si` (bị VN ISP chặn L3 + Nyaa chặn IP datacenter).
+This repo rebuilds the whole music streaming box after a **phone swap / factory reset**.
+The RSS feed is pre-fetched by the companion repo `danhnth/nyaa-rss-proxy` (GitHub Actions every 12h → `feed.json`).
+Termux only pulls that static file and never touches `nyaa.si` directly (blocked by VN ISP at L3 + Nyaa blocks datacenter IPs).
 
-## Kiến trúc
+## Architecture
 
 ```
-[Nyaa.si] --(runner IP sạch)--> [nyaa-rss-proxy/feed.json] --(raw.githubusercontent)--> [Termux sync_nyaa.py] -> [transmission-daemon] -> ~/storage/music/Japanese -> [Navidrome]
+[Nyaa.si] --(clean runner IP)--> [nyaa-rss-proxy/feed.json] --(raw.githubusercontent)--> [Termux sync_nyaa.py] -> [transmission-daemon] -> ~/storage/music/Japanese -> [Navidrome]
 ```
 
-- `nyaa-rss-proxy`: `fetch_nyaa.py` chỉ dùng stdlib, cron `0 */12 * * *`, ghi `feed.json` 75 items có `infoHash/size/seeders` (75 là giới hạn của Nyaa cho mỗi RSS feed).
-- Repo này: client Termux + tài liệu khôi phục. Không trùng logic fetch.
+- `nyaa-rss-proxy`: stdlib-only `fetch_nyaa.py`, cron `0 */12 * * *`, writes `feed.json` with 75 items including `infoHash/size/seeders` (75 is Nyaa's per-feed RSS limit).
+- This repo: Termux client + restore docs. No duplicated fetch logic.
 
-## Khôi phục nhanh (máy mới)
+## Quick restore (new phone)
 
-Chạy từng dòng một (Termux hay lỗi khi paste multi-line: dấu `\` cuối dòng sẽ nuốt lệnh tiếp theo, `~` trong quote không expand):
+Run line by line (Termux paste is fragile with multi-line: a trailing `\` swallows the next command, and `~` inside quotes does not expand):
 
 ```bash
 pkg update -y
@@ -41,7 +41,7 @@ crond
 termux-wake-lock
 ```
 
-Copy file vào máy:
+Copy files onto the phone:
 
 ```bash
 cp scripts/sync_nyaa.py $HOME/scripts/sync_nyaa.py
@@ -51,7 +51,7 @@ cp scripts/sync_nyaa.py $HOME/scripts/sync_nyaa.py
 python $HOME/scripts/sync_nyaa.py
 ```
 
-Đặt cron (xem `termux/crontab.example`):
+Set up cron (see `termux/crontab.example`):
 
 ```bash
 crontab -e
@@ -61,34 +61,34 @@ crontab -e
 0 */2 * * * python /data/data/com.termux/files/home/scripts/sync_nyaa.py >> /data/data/com.termux/files/home/scripts/nyaa.log 2>&1
 ```
 
-## Cấu hình
+## Configuration
 
-Biến môi trường (đã có default dùng được ngay):
+Environment variables (sane defaults, works out of the box):
 
-| Var | Default | Ý nghĩa |
+| Var | Default | Meaning |
 |---|---|---|
-| `NYAA_FEED_URL` | `.../nyaa-rss-proxy/main/feed.json` | file tĩnh trên GitHub |
-| `NYAA_DOWNLOAD_DIR` | `~/storage/music/Japanese` | thư mục Navidrome quét |
-| `NYAA_HISTORY` | `~/scripts/downloaded_nyaa.txt` | chống tải trùng |
-| `NYAA_MAX_SIZE_GB` | `5.0` | chặn pack hàng trăm GB |
-| `NYAA_ADD_PAUSED` | `1` | thêm ở chế độ paused (`--start-paused`) |
+| `NYAA_FEED_URL` | `.../nyaa-rss-proxy/main/feed.json` | static file on GitHub |
+| `NYAA_DOWNLOAD_DIR` | `~/storage/music/Japanese` | directory Navidrome scans |
+| `NYAA_HISTORY` | `~/scripts/downloaded_nyaa.txt` | dedup history |
+| `NYAA_MAX_SIZE_GB` | `5.0` | blocks hundred-GB packs |
+| `NYAA_ADD_PAUSED` | `1` | add paused (`--start-paused`) |
 | `NYAA_TR_HOST` | `localhost:9091` | transmission RPC |
 
-Hai lớp bảo vệ pack to: size-cap + start-paused độc lập. Muốn tải bằng tay thì Resume trong WebUI.
+Two independent guards against huge packs: size cap + start-paused. Resume manually in the WebUI when you want it.
 
-## Transmission remote
+## Transmission remote access
 
-SSH tunnel, không cần sửa config:
+SSH tunnel, no config change needed:
 
 ```bash
-ssh -L 9091:127.0.0.1:9091 <user>@<IP_DT> -p <PORT_SSH>
+ssh -L 9091:127.0.0.1:9091 <user>@<PHONE_IP> -p <SSH_PORT>
 ```
 
-Mở whitelist thì xem `transmission/settings.json.example`. Nhớ `pkill transmission-daemon` trước khi sửa.
+For whitelist mode see `transmission/settings.json.example`. Remember to `pkill transmission-daemon` before editing it.
 
-## Chuyển thư mục tải (nếu đổi đường dẫn)
+## Moving the download directory
 
-Nếu data đã tự `mv` bằng tay thì dùng `--find`, không dùng `--move`:
+If you already `mv`-ed the data by hand, use `--find`, not `--move`:
 
 ```bash
 transmission-remote localhost:9091 -t <id> --find $HOME/storage/music/Japanese
@@ -96,10 +96,10 @@ transmission-remote localhost:9091 -t <id> --find $HOME/storage/music/Japanese
 
 ## Navidrome
 
-1. Cài binary Navidrome cho Android/ARM, trỏ `MusicFolder` về `~/storage/music/Japanese`.
-2. Sau mỗi lần move/xóa folder: Web UI → Rescan.
-3. Giữ Android không tối ưu pin Termux + Acquire Wakelock.
+1. Install the Android/ARM Navidrome binary, point `MusicFolder` at `~/storage/music/Japanese`.
+2. After every move/delete: Web UI → Rescan.
+3. Keep Android off battery optimization for Termux + Acquire Wakelock.
 
-## Đổi query nhạc
+## Changing the music query
 
-Đổi query thì sửa `QUERY` trong `nyaa-rss-proxy/fetch_nyaa.py`, không phải repo này. Repo này chỉ đổi `NYAA_FEED_URL` nếu fork proxy.
+Change `QUERY` in `nyaa-rss-proxy/fetch_nyaa.py`, not in this repo. Here you only change `NYAA_FEED_URL` if you fork the proxy.
