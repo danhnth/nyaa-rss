@@ -1,0 +1,7 @@
+# Navidrome config for Termux. Copy to $HOME/navidrome/navidrome.toml and edit.
+MusicFolder = "/data/data/com.termux/files/home/storage/music/Japanese"
+DataFolder = "/data/data/com.termux/files/home/navidrome/data"
+Port = "4533"
+ScanSchedule = "@every 6h"
+LogLevel = "info"
+# Reverse proxy / Tailscale serves plain HTTP on LAN; keep auth in Navidrome itself.

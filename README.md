@@ -12,6 +12,7 @@ Termux only pulls that static file and never touches `nyaa.si` directly (blocked
 
 - `nyaa-rss-proxy`: stdlib-only `fetch_nyaa.py`, cron `0 */12 * * *`, writes `feed.json` with 75 items including `infoHash/size/seeders` (75 is Nyaa's per-feed RSS limit).
 - This repo holds the Termux client and restore docs, without duplicating the fetch logic.
+- Full step-by-step: `docs/RESTORE-CHECKLIST.md`.
 
 ## Quick restore (new phone)
 
@@ -96,9 +97,11 @@ transmission-remote localhost:9091 -t <id> --find $HOME/storage/music/Japanese
 
 ## Navidrome
 
-1. Install the Android/ARM Navidrome binary, point `MusicFolder` at `~/storage/music/Japanese`.
+1. Install the Android/ARM Navidrome binary (pinned 0.64.2, see `termux/install-navidrome.sh`), point `MusicFolder` at `~/storage/music/Japanese`.
 2. After every move/delete: Web UI → Rescan.
 3. Keep Android off battery optimization for Termux + Acquire Wakelock.
+
+State backup (history + transmission config + Navidrome DB, not music files): `scripts/backup-state.sh`, restore with `scripts/restore-state.sh`.
 
 ## Changing the music query
 
