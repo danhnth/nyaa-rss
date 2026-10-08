@@ -1,21 +1,21 @@
-# nyaa-rss — Music Home Server reproduce kit (Termux + Transmission + Navidrome)
+# nyaa-rss — Bộ reproduce Music Home Server (Termux + Transmission + Navidrome)
 
-Repo nay giup dung lai toan bo may stream nhac sau khi **doi dien thoai / reset may**.
-Feed RSS duoc lay san tu repo phu: `danhnth/nyaa-rss-proxy` (GitHub Actions 12h/lan -> `feed.json`).
-Termux chi keo file tinh, khong bao gio cham truc tiep `nyaa.si` (bi VN ISP chan L3 + Nyaa chan IP datacenter).
+Repo này giúp dựng lại toàn bộ máy stream nhạc sau khi **đổi điện thoại / reset máy**.
+Feed RSS được lấy sẵn từ repo phụ: `danhnth/nyaa-rss-proxy` (GitHub Actions 12h/lần → `feed.json`).
+Termux chỉ kéo file tĩnh, không bao giờ chạm trực tiếp `nyaa.si` (bị VN ISP chặn L3 + Nyaa chặn IP datacenter).
 
-## Kien truc
+## Kiến trúc
 
 ```
-[Nyaa.si] --(runner IP sach)--> [nyaa-rss-proxy/feed.json] --(raw.githubusercontent)--> [Termux sync_nyaa.py] -> [transmission-daemon] -> ~/storage/music/Japanese -> [Navidrome]
+[Nyaa.si] --(runner IP sạch)--> [nyaa-rss-proxy/feed.json] --(raw.githubusercontent)--> [Termux sync_nyaa.py] -> [transmission-daemon] -> ~/storage/music/Japanese -> [Navidrome]
 ```
 
-- `nyaa-rss-proxy`: `fetch_nyaa.py` stdlib-only, cron `0 */12 * * *`, ghi `feed.json` 75 items co `infoHash/size/seeders`.
-- Repo nay: client Termux + doc khoi phuc. Khong trung fetch logic.
+- `nyaa-rss-proxy`: `fetch_nyaa.py` chỉ dùng stdlib, cron `0 */12 * * *`, ghi `feed.json` 75 items có `infoHash/size/seeders` (75 là giới hạn của Nyaa cho mỗi RSS feed).
+- Repo này: client Termux + tài liệu khôi phục. Không trùng logic fetch.
 
-## Khoi phuc nhanh (may moi)
+## Khôi phục nhanh (máy mới)
 
-Chay tung dong 1 (Termux paste multi-line hay loi `\` + `~` trong quote):
+Chạy từng dòng một (Termux hay lỗi khi paste multi-line: dấu `\` cuối dòng sẽ nuốt lệnh tiếp theo, `~` trong quote không expand):
 
 ```bash
 pkg update -y
@@ -41,7 +41,7 @@ crond
 termux-wake-lock
 ```
 
-Copy file vao may:
+Copy file vào máy:
 
 ```bash
 cp scripts/sync_nyaa.py $HOME/scripts/sync_nyaa.py
@@ -51,7 +51,7 @@ cp scripts/sync_nyaa.py $HOME/scripts/sync_nyaa.py
 python $HOME/scripts/sync_nyaa.py
 ```
 
-Dat cron (xem `termux/crontab.example`):
+Đặt cron (xem `termux/crontab.example`):
 
 ```bash
 crontab -e
@@ -61,77 +61,45 @@ crontab -e
 0 */2 * * * python /data/data/com.termux/files/home/scripts/sync_nyaa.py >> /data/data/com.termux/files/home/scripts/nyaa.log 2>&1
 ```
 
-## Cau hinh
+## Cấu hình
 
-Env (co default dung duoc ngay):
+Biến môi trường (đã có default dùng được ngay):
 
-| Var | Default | Y nghia |
+| Var | Default | Ý nghĩa |
 |---|---|---|
-| `NYAA_FEED_URL` | `.../nyaa-rss-proxy/main/feed.json` | file tinh github |
-| `NYAA_DOWNLOAD_DIR` | `~/storage/music/Japanese` | thu muc Navidrome quet |
-| `NYAA_HISTORY` | `~/scripts/downloaded_nyaa.txt` | chong tai trung |
-| `NYAA_MAX_SIZE_GB` | `5.0` | block pack tram GB |
-| `NYAA_ADD_PAUSED` | `1` | them o che do paused (`--start-paused`) |
+| `NYAA_FEED_URL` | `.../nyaa-rss-proxy/main/feed.json` | file tĩnh trên GitHub |
+| `NYAA_DOWNLOAD_DIR` | `~/storage/music/Japanese` | thư mục Navidrome quét |
+| `NYAA_HISTORY` | `~/scripts/downloaded_nyaa.txt` | chống tải trùng |
+| `NYAA_MAX_SIZE_GB` | `5.0` | chặn pack hàng trăm GB |
+| `NYAA_ADD_PAUSED` | `1` | thêm ở chế độ paused (`--start-paused`) |
 | `NYAA_TR_HOST` | `localhost:9091` | transmission RPC |
 
-Hai lop bao ve pack to: size-cap + start-paused doc lap. Muon tai tay thi Resume trong WebUI.
+Hai lớp bảo vệ pack to: size-cap + start-paused độc lập. Muốn tải bằng tay thì Resume trong WebUI.
 
 ## Transmission remote
 
-SSH tunnel khong can sua config:
+SSH tunnel, không cần sửa config:
 
 ```bash
 ssh -L 9091:127.0.0.1:9091 <user>@<IP_DT> -p <PORT_SSH>
 ```
 
-Mo whitelist thi xem `transmission/settings.json.example`. Nho `pkill transmission-daemon` truoc khi sua.
+Mở whitelist thì xem `transmission/settings.json.example`. Nhớ `pkill transmission-daemon` trước khi sửa.
 
-## Navidrome
+## Chuyển thư mục tải (nếu đổi đường dẫn)
 
-1. Cai binary Navidrome cho Android/ARM, tro `MusicFolder` ve `~/storage/music/Japanese`.
-2. Sau moi lan move/xoa folder: Web UI -> Rescan.
-3. Gi Android khong toi uu pin Termux + Acquire Wakelock.
-
-## Don dep Umamusume (1-dong paste)
-
-Luu y: `~` trong quote khong expand, trailing `\` se nuot lenh tiep theo. Dung `$HOME`, khong `\`.
-
-Cuu album unique:
-
-```bash
-a=$HOME/storage/music/Japanese/Umamusume/"UmaMusu discography"/"[2021-2026] WINNING LIVE"; b=$HOME/storage/music/Japanese/Umamusume/"[2021-2026] WINNING LIVE"; for d in "$a"/*; do [ -e "$b/$(basename "$d")" ] || mv "$d" "$b"/; done
-```
-
-Kiem tra truoc khi xoa:
-
-```bash
-ls -1 $HOME/storage/music/Japanese/Umamusume/"UmaMusu discography"/"[2021-2026] WINNING LIVE"
-```
-
-Xoa container:
-
-```bash
-rm -rf $HOME/storage/music/Japanese/Umamusume/"UmaMusu discography"
-```
-
-Go torrent gay data (giu file):
-
-```bash
-transmission-remote localhost:9091 -t 1 --remove
-```
-
-Verify:
-
-```bash
-ls -1 $HOME/storage/music/Japanese/Umamusume/
-```
-
-Chuyen download-dir cu sang moi (neu transmission da co data thi dung `--find`, khong `--move`):
+Nếu data đã tự `mv` bằng tay thì dùng `--find`, không dùng `--move`:
 
 ```bash
 transmission-remote localhost:9091 -t <id> --find $HOME/storage/music/Japanese
 ```
 
-## Doi query nhac
+## Navidrome
 
-Doi query thi sua `QUERY` trong `nyaa-rss-proxy/fetch_nyaa.py`, khong phai repo nay. Repo nay chi doi `NYAA_FEED_URL` neu fork proxy.
+1. Cài binary Navidrome cho Android/ARM, trỏ `MusicFolder` về `~/storage/music/Japanese`.
+2. Sau mỗi lần move/xóa folder: Web UI → Rescan.
+3. Giữ Android không tối ưu pin Termux + Acquire Wakelock.
+
+## Đổi query nhạc
+
+Đổi query thì sửa `QUERY` trong `nyaa-rss-proxy/fetch_nyaa.py`, không phải repo này. Repo này chỉ đổi `NYAA_FEED_URL` nếu fork proxy.
