@@ -1,0 +1,2 @@
+# Chay sync moi 2 tieng. Sua duong dan tuy may (Termux: /data/data/com.termux/files/home/...)
+0 */2 * * * python /data/data/com.termux/files/home/scripts/sync_nyaa.py >> /data/data/com.termux/files/home/scripts/nyaa.log 2>&1

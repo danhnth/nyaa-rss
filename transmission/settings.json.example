@@ -1,0 +1,10 @@
+{
+  "_note": "pkill transmission-daemon truoc khi sua settings.json. Xem README.",
+  "download-dir": "/data/data/com.termux/files/home/storage/music/Japanese",
+  "rpc-enabled": true,
+  "rpc-bind-address": "0.0.0.0",
+  "rpc-port": 9091,
+  "rpc-whitelist-enabled": false,
+  "rpc-authentication-required": false,
+  "umask": 2
+}

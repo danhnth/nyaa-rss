@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+nyaa.log
+.downloaded_nyaa.txt.swp
