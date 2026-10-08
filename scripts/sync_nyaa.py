@@ -11,9 +11,15 @@ import sys
 import urllib.parse
 import urllib.request
 
-FEED_URL = os.environ.get(
-    "NYAA_FEED_URL",
-    "https://raw.githubusercontent.com/danhnth/nyaa-rss-proxy/main/feed.json",
+def _split_urls(raw: str) -> list:
+    return [u.strip() for u in re.split(r"[,\n]", raw) if u.strip()]
+
+
+FEED_URLS = _split_urls(os.environ.get("NYAA_FEED_URLS", "")) or _split_urls(
+    os.environ.get(
+        "NYAA_FEED_URL",
+        "https://raw.githubusercontent.com/danhnth/nyaa-rss-proxy/main/feed.json",
+    )
 )
 DOWNLOAD_DIR = os.environ.get(
     "NYAA_DOWNLOAD_DIR",
@@ -56,8 +62,8 @@ def save_history(guid: str) -> None:
         f.write(guid + "\n")
 
 
-def fetch_feed() -> dict:
-    req = urllib.request.Request(FEED_URL, headers={"User-Agent": UA})
+def fetch_feed(url: str) -> dict:
+    req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.loads(r.read().decode("utf-8", "replace"))
 
@@ -77,12 +83,24 @@ def add_magnet(title: str, info_hash: str) -> bool:
 
 def main() -> int:
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    try:
-        feed = fetch_feed()
-    except Exception as e:
-        print(f"FEED_FAIL: {e}", file=sys.stderr)
+    items = []
+    seen_guid = set()
+    ok_feeds = 0
+    for url in FEED_URLS:
+        try:
+            feed = fetch_feed(url)
+        except Exception as e:
+            print(f"FEED_FAIL {url}: {e}", file=sys.stderr)
+            continue
+        ok_feeds += 1
+        for it in feed.get("items", []):
+            guid = it.get("guid") or it.get("link") or it.get("title")
+            if guid and guid not in seen_guid:
+                seen_guid.add(guid)
+                items.append(it)
+    if not ok_feeds:
+        print("FEED_FAIL: all feeds failed", file=sys.stderr)
         return 1
-    items = feed.get("items", [])
     seen = load_history()
     added, skipped_size, skipped_dup = 0, 0, 0
     for it in items:
@@ -103,7 +121,7 @@ def main() -> int:
         if add_magnet(it.get("title", info_hash), info_hash):
             added += 1
             save_history(guid)
-    print(f"done: added={added} skip_size={skipped_size} skip_dup={skipped_dup} total={len(items)}")
+    print(f"done: added={added} skip_size={skipped_size} skip_dup={skipped_dup} total={len(items)} feeds={ok_feeds}/{len(FEED_URLS)}")
     return 0
 
 

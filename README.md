@@ -68,7 +68,7 @@ Environment variables (defaults work as is):
 
 | Var | Default | Meaning |
 |---|---|---|
-| `NYAA_FEED_URL` | `.../nyaa-rss-proxy/main/feed.json` | static file on GitHub |
+| `NYAA_FEED_URLS` | `.../nyaa-rss-proxy/main/feed.json` | comma-separated feed files on GitHub (`NYAA_FEED_URL` still works for one) |
 | `NYAA_DOWNLOAD_DIR` | `~/storage/music/Japanese` | directory Navidrome scans |
 | `NYAA_HISTORY` | `~/scripts/downloaded_nyaa.txt` | dedup history |
 | `NYAA_MAX_SIZE_GB` | `5.0` | blocks hundred-GB packs |
@@ -105,4 +105,12 @@ State backup (history + transmission config + Navidrome DB, not music files): `s
 
 ## Changing the music query
 
-Change `QUERY` in `nyaa-rss-proxy/fetch_nyaa.py`, not in this repo. Here you only change `NYAA_FEED_URL` if you fork the proxy.
+Queries live in `nyaa-rss-proxy/queries.txt` (one per line), not in this repo.
+Push a new line and the next run publishes `feed-<slug>.json`, then point the
+phone at it:
+
+```bash
+export NYAA_FEED_URLS="https://raw.githubusercontent.com/danhnth/nyaa-rss-proxy/main/feed.json,https://raw.githubusercontent.com/danhnth/nyaa-rss-proxy/main/feed-umamusume.json"
+```
+
+Only change the URL host here if you fork the proxy.
