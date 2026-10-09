@@ -1,7 +1,7 @@
 # nyaa-rss: Music Home Server reproduce kit (Termux + Transmission + Navidrome)
 
 This repo rebuilds the music streaming box after a phone swap or factory reset.
-The RSS feed is pre-fetched by the companion repo `danhnth/nyaa-rss-proxy` (GitHub Actions every 12h → `feed.json`).
+The RSS feed is pre-fetched by the companion repo [nyaa-rss-proxy](https://github.com/danhnth/nyaa-rss-proxy) (GitHub Actions every 12h → `feed.json`).
 Termux only pulls that static file and never touches `nyaa.si` directly (blocked by VN ISP at L3 + Nyaa blocks datacenter IPs).
 
 ## Architecture
@@ -10,7 +10,7 @@ Termux only pulls that static file and never touches `nyaa.si` directly (blocked
 [Nyaa.si] --(clean runner IP)--> [nyaa-rss-proxy/feed.json] --(raw.githubusercontent)--> [Termux sync_nyaa.py] -> [transmission-daemon] -> ~/storage/music/Japanese -> [Navidrome]
 ```
 
-- `nyaa-rss-proxy`: stdlib-only `fetch_nyaa.py`, cron `0 */12 * * *`, writes `feed.json` with 75 items including `infoHash/size/seeders` (75 is Nyaa's per-feed RSS limit).
+- [nyaa-rss-proxy](https://github.com/danhnth/nyaa-rss-proxy): stdlib-only `fetch_nyaa.py`, cron `0 */12 * * *`, writes `feed.json` with 75 items including `infoHash/size/seeders` (75 is Nyaa's per-feed RSS limit).
 - This repo holds the Termux client and restore docs, without duplicating the fetch logic.
 - Full step-by-step: `docs/RESTORE-CHECKLIST.md`.
 
@@ -105,7 +105,7 @@ State backup (history + transmission config + Navidrome DB, not music files): `s
 
 ## Changing the music query
 
-Queries live in `nyaa-rss-proxy/queries.txt` (one per line), not in this repo.
+Queries live in [nyaa-rss-proxy/queries.txt](https://github.com/danhnth/nyaa-rss-proxy/blob/main/queries.txt) (one per line), not in this repo.
 Push a new line and the next run publishes `feed-<slug>.json`, then point the
 phone at it:
 
@@ -118,7 +118,7 @@ Only change the URL host here if you fork the proxy.
 ## Fetching old releases (backfill)
 
 Feeds only cover the newest 75 per query. For older releases, run the manual
-`backfill-nyaa` workflow in the proxy repo (query + pages, up to 50), then add
+`backfill-nyaa` workflow in [the proxy repo](https://github.com/danhnth/nyaa-rss-proxy) (query + pages, up to 50), then add
 the catalog URL to `NYAA_FEED_URLS` alongside the feeds:
 
 ```bash
