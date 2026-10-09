@@ -114,3 +114,16 @@ export NYAA_FEED_URLS="https://raw.githubusercontent.com/danhnth/nyaa-rss-proxy/
 ```
 
 Only change the URL host here if you fork the proxy.
+
+## Fetching old releases (backfill)
+
+Feeds only cover the newest 75 per query. For older releases, run the manual
+`backfill-nyaa` workflow in the proxy repo (query + pages, up to 50), then add
+the catalog URL to `NYAA_FEED_URLS` alongside the feeds:
+
+```bash
+export NYAA_FEED_URLS="https://raw.githubusercontent.com/danhnth/nyaa-rss-proxy/main/feed.json,https://raw.githubusercontent.com/danhnth/nyaa-rss-proxy/main/catalog-bang-dream.json"
+```
+
+Same item schema, so size cap, start-paused, and history dedup apply unchanged.
+Already-downloaded items are skipped via history.
